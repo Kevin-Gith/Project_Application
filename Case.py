@@ -19,6 +19,19 @@ USERS = {
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 
+# ---------- 初始化 session_state（防止 AttributeError） ----------
+def init_session_state():
+    defaults = {
+        "logged_in": False,
+        "username": "",
+        "role": None
+    }
+    for key, val in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = val
+
+init_session_state()
+
 # ---------- Google Sheet ----------
 def get_gc():
     creds = Credentials.from_service_account_info(dict(st.secrets["GOOGLE_CLOUD_KEY"]), scopes=SCOPES)
@@ -124,17 +137,6 @@ def find_row_by_project_id(df: pd.DataFrame, project_id: str):
     return None, None
 
 # ---------- UI ----------
-st.set_page_config(page_title="Project ID System", layout="centered")
-
-# 初始化 Session State
-for key, default in [
-    ("logged_in", False),
-    ("username", ""),
-    ("role", None)
-]:
-    if key not in st.session_state:
-        st.session_state[key] = default
-
 def login():
     if not st.session_state.logged_in:
         st.title("專案建立系統")
@@ -249,6 +251,7 @@ def main_page():
                 st.rerun()
 
 def main():
+    init_session_state()
     if not st.session_state.logged_in:
         login()
     else:
