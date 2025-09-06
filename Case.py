@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import datetime
 import gspread
+import json
 from google.oauth2.service_account import Credentials
 
 # ------------ CONFIG -------------
@@ -21,7 +22,8 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapi
 
 # ---------- Google Sheet ----------
 def get_gc():
-    creds = Credentials.from_service_account_info(dict(st.secrets["GOOGLE_CLOUD_KEY"]), scopes=SCOPES)
+    service_account_info = json.loads(st.secrets["GOOGLE_CLOUD_KEY"])
+    creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
     return gspread.authorize(creds)
 
 def ensure_sheet_and_headers(ws, expected_headers):
@@ -248,6 +250,3 @@ def main():
         login()
     else:
         main_page()
-
-if __name__ == "__main__":
-    main()
