@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import datetime
 import gspread
-import json
 from google.oauth2.service_account import Credentials
 
 # ------------ CONFIG -------------
@@ -22,8 +21,7 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapi
 
 # ---------- Google Sheet ----------
 def get_gc():
-    service_account_info = json.loads(st.secrets["GOOGLE_CLOUD_KEY"])
-    creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
+    creds = Credentials.from_service_account_info(dict(st.secrets["GOOGLE_CLOUD_KEY"]), scopes=SCOPES)
     return gspread.authorize(creds)
 
 def ensure_sheet_and_headers(ws, expected_headers):
@@ -127,10 +125,15 @@ def find_row_by_project_id(df: pd.DataFrame, project_id: str):
 
 # ---------- UI ----------
 st.set_page_config(page_title="Project ID System", layout="centered")
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-    st.session_state.username = ""
-    st.session_state.role = None
+
+# 初始化 Session State
+for key, default in [
+    ("logged_in", False),
+    ("username", ""),
+    ("role", None)
+]:
+    if key not in st.session_state:
+        st.session_state[key] = default
 
 def login():
     if not st.session_state.logged_in:
@@ -250,3 +253,6 @@ def main():
         login()
     else:
         main_page()
+
+if __name__ == "__main__":
+    main()
