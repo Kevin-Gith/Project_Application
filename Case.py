@@ -22,7 +22,7 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapi
 
 # ---------- Google Sheet ----------
 def get_gc():
-    service_account_info = st.secrets["GOOGLE_CLOUD_KEY"]  # 這裡不要再 json.loads()
+    service_account_info = json.loads(st.secrets["GOOGLE_CLOUD_KEY"])
     creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
     return gspread.authorize(creds)
 
@@ -78,7 +78,7 @@ def load_lock_df():
 
 def append_row_by_headers(ws, row_dict):
     headers = ws.row_values(1)
-    row = [str(row_dict.get(h, "")) for h in headers]
+    row = [str(row_dict.get(h, "")) for h in headers]  # 確保全部轉成字串
     ws.append_row(row, value_input_option="RAW")
 
 # ---------- Lock 機制 ----------
@@ -177,20 +177,22 @@ def main_page():
             col_a, col_b = st.columns(2)
             with col_a:
                 if st.button("送出"):
-                    project_id = f"{client_choice}-{project_choice}-{cooling_choice}-{dept_choice}-{reserved_row['Number']}"
-                    ws.update(f"A{reserved_idx+2}:K{reserved_idx+2}", [[
-                        f"({client_choice}){clients[client_choice]}",
-                        f"({project_choice}){project_types[project_choice]}",
-                        f"({cooling_choice}){coolings[cooling_choice]}",
-                        f"({dept_choice}){departments[dept_choice]}",
-                        reserved_row["Number"],
-                        project_id,
-                        datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                        "簽核中",
-                        note,
-                        display_name,
-                        ""
-                    ]])
+                    ws.update(
+                        f"A{reserved_idx+2}:K{reserved_idx+2}",
+                        [[
+                            f"({client_choice}){clients[client_choice]}",
+                            f"({project_choice}){project_types[project_choice]}",
+                            f"({cooling_choice}){coolings[cooling_choice]}",
+                            f"({dept_choice}){departments[dept_choice]}",
+                            str(reserved_row["Number"]),
+                            reserved_row["Project_ID"],
+                            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "簽核中",
+                            str(note),
+                            display_name,
+                            ""
+                        ]]
+                    )
                     release_lock(username)
                     st.success("專案已送出")
                     st.rerun()
@@ -257,15 +259,10 @@ def main_page():
                     if idx is not None:
                         ws.update_cell(idx+2, df.columns.get_loc("Status")+1, "預留中")
                         ws.update_cell(idx+2, df.columns.get_loc("Approver")+1, display_name)
-                st.warning(f"已駁回並退回 {len(selected)} 個專案")
+                st.warning(f"已駁回 {len(selected)} 個專案，狀態已改回預留中")
                 st.rerun()
 
 def main():
-    if "logged_in" not in st.session_state:
-        st.session_state.logged_in = False
-        st.session_state.username = ""
-        st.session_state.role = None
-
     if not st.session_state.logged_in:
         login()
     else:
