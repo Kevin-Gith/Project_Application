@@ -268,6 +268,12 @@ def main_page():
                 st.rerun()
 
 def main():
+    # 初始化 session_state
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+        st.session_state.username = ""
+        st.session_state.role = None
+
     if not st.session_state.logged_in:
         login()
     else:
