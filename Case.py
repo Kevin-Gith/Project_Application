@@ -127,10 +127,6 @@ def find_row_by_project_id(df: pd.DataFrame, project_id: str):
 
 # ---------- UI ----------
 st.set_page_config(page_title="Project ID System", layout="centered")
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-    st.session_state.username = ""
-    st.session_state.role = None
 
 def login():
     if not st.session_state.logged_in:
@@ -167,7 +163,7 @@ def main_page():
         reserved_idx, reserved_row = find_reserved_row(df, username)
 
         if reserved_idx is not None:
-            st.subheader("上次未完成的專案，可修改後送出")
+            st.subheader("上次未完成的專案（可編輯）")
             client_choice = st.selectbox("客戶端", options=list(clients.keys()),
                                          index=list(clients.keys()).index(reserved_row["Client"][1:3]),
                                          format_func=lambda k: f"({k}){clients[k]}")
@@ -258,14 +254,22 @@ def main_page():
                 for pid in selected:
                     idx, _ = find_row_by_project_id(df, pid)
                     if idx is not None:
-                        # 改成 "預留中" 讓使用者能再次編輯送出
                         ws.update_cell(idx+2, df.columns.get_loc("Status")+1, "預留中")
                         ws.update_cell(idx+2, df.columns.get_loc("Approver")+1, display_name)
-                st.warning(f"已駁回 {len(selected)} 個專案，狀態已改回預留中")
+                st.warning(f"已駁回 {len(selected)} 個專案，狀態已回到預留中")
                 st.rerun()
 
 def main():
+    # 初始化 session_state 避免 AttributeError
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+        st.session_state.username = ""
+        st.session_state.role = None
+
     if not st.session_state.logged_in:
         login()
     else:
         main_page()
+
+if __name__ == "__main__":
+    main()
