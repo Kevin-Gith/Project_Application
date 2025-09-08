@@ -129,9 +129,12 @@ def find_row_by_project_id(df: pd.DataFrame, project_id: str):
 
 # ---------- UI ----------
 st.set_page_config(page_title="Project ID System", layout="centered")
+# 初始化 session_state 避免 AttributeError
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "username" not in st.session_state:
     st.session_state.username = ""
+if "role" not in st.session_state:
     st.session_state.role = None
 
 def login():
