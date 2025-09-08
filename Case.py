@@ -264,7 +264,7 @@ def main_page():
                     if idx is not None:
                         ws.update_cell(idx+2, df.columns.get_loc("Status")+1, "預留中")
                         ws.update_cell(idx+2, df.columns.get_loc("Approver")+1, display_name)
-                st.warning(f"已駁回 {len(selected)} 個專案，狀態已改回預留中")
+                st.warning(f"已駁回 {len(selected)} 個專案")
                 st.rerun()
 
 def main():
