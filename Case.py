@@ -22,7 +22,7 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapi
 
 # ---------- Google Sheet ----------
 def get_gc():
-    service_account_info = json.loads(st.secrets["GOOGLE_CLOUD_KEY"])
+    service_account_info = st.secrets["GOOGLE_CLOUD_KEY"]  # 這裡不要再 json.loads()
     creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
     return gspread.authorize(creds)
 
