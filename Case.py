@@ -127,6 +127,10 @@ def find_row_by_project_id(df: pd.DataFrame, project_id: str):
 
 # ---------- UI ----------
 st.set_page_config(page_title="Project ID System", layout="centered")
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+    st.session_state.role = None
 
 def login():
     if not st.session_state.logged_in:
@@ -163,33 +167,30 @@ def main_page():
         reserved_idx, reserved_row = find_reserved_row(df, username)
 
         if reserved_idx is not None:
-            st.subheader("上次未完成的專案（可編輯）")
-            client_choice = st.selectbox("客戶端", options=list(clients.keys()),
-                                         index=list(clients.keys()).index(reserved_row["Client"][1:3]),
-                                         format_func=lambda k: f"({k}){clients[k]}")
-            project_choice = st.selectbox("專案類型", options=list(project_types.keys()),
-                                          index=list(project_types.keys()).index(reserved_row["Project"][1:3]),
-                                          format_func=lambda k: f"({k}){project_types[k]}")
-            cooling_choice = st.selectbox("散熱方案", options=list(coolings.keys()),
-                                          index=list(coolings.keys()).index(reserved_row["Cooling"][1:2]),
-                                          format_func=lambda k: f"({k}){coolings[k]}")
-            dept_choice = st.selectbox("部門代碼", options=list(departments.keys()),
-                                       index=list(departments.keys()).index(reserved_row["Department"][1:2]),
-                                       format_func=lambda k: f"({k}){departments[k]}")
+            st.subheader("上次未完成的專案（可修改後送出）")
+            client_choice = st.selectbox("客戶端", options=list(clients.keys()), index=list(clients.keys()).index(reserved_row["Client"][1:3]), format_func=lambda k: f"({k}){clients[k]}")
+            project_choice = st.selectbox("專案類型", options=list(project_types.keys()), index=list(project_types.keys()).index(reserved_row["Project"][1:3]), format_func=lambda k: f"({k}){project_types[k]}")
+            cooling_choice = st.selectbox("散熱方案", options=list(coolings.keys()), index=list(coolings.keys()).index(reserved_row["Cooling"][1:2]), format_func=lambda k: f"({k}){coolings[k]}")
+            dept_choice = st.selectbox("部門代碼", options=list(departments.keys()), index=list(departments.keys()).index(reserved_row["Department"][1:2]), format_func=lambda k: f"({k}){departments[k]}")
             note = st.text_area("備註", value=reserved_row["Note"])
 
             col_a, col_b = st.columns(2)
             with col_a:
                 if st.button("送出"):
-                    row_num = reserved_idx + 2
-                    ws.update_cell(row_num, df.columns.get_loc("Client")+1, f"({client_choice}){clients[client_choice]}")
-                    ws.update_cell(row_num, df.columns.get_loc("Project")+1, f"({project_choice}){project_types[project_choice]}")
-                    ws.update_cell(row_num, df.columns.get_loc("Cooling")+1, f"({cooling_choice}){coolings[cooling_choice]}")
-                    ws.update_cell(row_num, df.columns.get_loc("Department")+1, f"({dept_choice}){departments[dept_choice]}")
-                    ws.update_cell(row_num, df.columns.get_loc("Note")+1, note)
-                    ws.update_cell(row_num, df.columns.get_loc("Status")+1, "簽核中")
-                    ws.update_cell(row_num, df.columns.get_loc("Created_Time")+1,
-                                   datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+                    project_id = f"{client_choice}-{project_choice}-{cooling_choice}-{dept_choice}-{reserved_row['Number']}"
+                    ws.update(f"A{reserved_idx+2}:K{reserved_idx+2}", [[
+                        f"({client_choice}){clients[client_choice]}",
+                        f"({project_choice}){project_types[project_choice]}",
+                        f"({cooling_choice}){coolings[cooling_choice]}",
+                        f"({dept_choice}){departments[dept_choice]}",
+                        reserved_row["Number"],
+                        project_id,
+                        datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "簽核中",
+                        note,
+                        display_name,
+                        ""
+                    ]])
                     release_lock(username)
                     st.success("專案已送出")
                     st.rerun()
@@ -256,11 +257,10 @@ def main_page():
                     if idx is not None:
                         ws.update_cell(idx+2, df.columns.get_loc("Status")+1, "預留中")
                         ws.update_cell(idx+2, df.columns.get_loc("Approver")+1, display_name)
-                st.warning(f"已駁回 {len(selected)} 個專案，狀態已回到預留中")
+                st.warning(f"已駁回並退回 {len(selected)} 個專案")
                 st.rerun()
 
 def main():
-    # 初始化 session_state 避免 AttributeError
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
         st.session_state.username = ""
@@ -270,6 +270,3 @@ def main():
         login()
     else:
         main_page()
-
-if __name__ == "__main__":
-    main()
