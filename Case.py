@@ -172,7 +172,7 @@ def main_page():
         reserved_idx, reserved_row = find_reserved_row(df, username)
 
         if reserved_idx is not None:
-            st.subheader("上次未完成的專案（可修改後送出）")
+            st.subheader("未完成或被駁回的專案（請再次確認內容後送出）")
             client_choice = st.selectbox("客戶端", options=list(clients.keys()), index=list(clients.keys()).index(reserved_row["Client"][1:3]), format_func=lambda k: f"({k}){clients[k]}")
             project_choice = st.selectbox("專案類型", options=list(project_types.keys()), index=list(project_types.keys()).index(reserved_row["Project"][1:3]), format_func=lambda k: f"({k}){project_types[k]}")
             cooling_choice = st.selectbox("散熱方案", options=list(coolings.keys()), index=list(coolings.keys()).index(reserved_row["Cooling"][1:2]), format_func=lambda k: f"({k}){coolings[k]}")
